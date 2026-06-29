@@ -20,6 +20,7 @@ body {
   color: var(--ink);
   font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", Meiryo, system-ui, sans-serif;
   background: #1d2423;
+  user-select: none;
 }
 
 button,
@@ -73,6 +74,70 @@ button {
   display: none;
 }
 
+.play-overlay {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  top: 50%;
+  display: grid;
+  gap: 7px;
+  min-width: min(340px, calc(100% - 40px));
+  padding: 20px 22px;
+  transform: translate(-50%, -50%);
+  color: #fffaf1;
+  border: 1px solid rgba(255, 250, 241, .34);
+  border-radius: 8px;
+  background: rgba(24, 31, 30, .78);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, .35);
+  backdrop-filter: blur(10px);
+}
+
+.play-overlay.hidden {
+  display: none;
+}
+
+.play-overlay span {
+  font-size: 21px;
+}
+
+.play-overlay small {
+  color: rgba(255, 250, 241, .72);
+  font-weight: 700;
+}
+
+.crosshair {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.crosshair::before,
+.crosshair::after {
+  content: "";
+  position: absolute;
+  background: rgba(255, 250, 241, .72);
+  box-shadow: 0 1px 6px rgba(0, 0, 0, .5);
+}
+
+.crosshair::before {
+  left: 8px;
+  top: 0;
+  width: 2px;
+  height: 18px;
+}
+
+.crosshair::after {
+  left: 0;
+  top: 8px;
+  width: 18px;
+  height: 2px;
+}
+
 .hud {
   position: absolute;
   z-index: 2;
@@ -97,7 +162,7 @@ button {
 .hud h1 {
   margin: 0;
   color: #fffaf1;
-  font-size: clamp(28px, 4vw, 54px);
+  font-size: clamp(24px, 3vw, 44px);
   line-height: 1;
   letter-spacing: 0;
   text-shadow: 0 8px 26px rgba(0, 0, 0, .34);
@@ -138,6 +203,7 @@ button {
   color: #fff;
   background: rgba(38, 49, 48, .72);
   border-color: rgba(255, 250, 241, .32);
+  touch-action: none;
 }
 
 [data-move="forward"] { grid-area: up; }
