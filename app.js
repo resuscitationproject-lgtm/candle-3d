@@ -17,10 +17,16 @@ let avatar;
 let avatarBody;
 let clock;
 let floorTexture;
+let raycaster;
+let pointer;
+let groundPlane;
+let moveTarget = null;
+let targetMarker;
 let nearestPlace = "entrance";
-let yaw = Math.PI;
-let pitch = -.18;
+let yaw = Math.PI * .86;
+let pitch = -.42;
 let dragging = false;
+let dragButton = -1;
 let lastPointer = { x: 0, y: 0 };
 
 const keys = new Set();
@@ -60,8 +66,8 @@ try {
 
 function init() {
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x182321);
-  scene.fog = new THREE.Fog(0x182321, 16, 34);
+  scene.background = new THREE.Color(0x72c7ef);
+  scene.fog = new THREE.Fog(0x72c7ef, 19, 42);
 
   camera = new THREE.PerspectiveCamera(62, 1, .1, 120);
   renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -77,6 +83,9 @@ function init() {
   avatar.position.copy(toVector3(places.entrance.position));
   scene.add(avatar);
 
+  raycaster = new THREE.Raycaster();
+  pointer = new THREE.Vector2();
+  groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
   clock = new THREE.Clock();
   buildRoom();
   buildAvatar();
@@ -97,7 +106,7 @@ function toVector3(position) {
 }
 
 function material(color, roughness = .72, metalness = .04) {
-  return new THREE.MeshStandardMaterial({ color, roughness, metalness });
+  return new THREE.MeshToonMaterial({ color });
 }
 
 function mesh(geometry, mat, position, cast = true, receive = true) {
@@ -109,9 +118,9 @@ function mesh(geometry, mat, position, cast = true, receive = true) {
 }
 
 function buildRoom() {
-  scene.add(new THREE.HemisphereLight(0xfff1d0, 0x243b36, 1.35));
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x5da65c, 1.8));
 
-  const mainLight = new THREE.DirectionalLight(0xfff1cf, 1.2);
+  const mainLight = new THREE.DirectionalLight(0xffffff, 1.45);
   mainLight.position.set(-3, 8, 5);
   mainLight.castShadow = true;
   mainLight.shadow.mapSize.set(2048, 2048);
@@ -121,13 +130,13 @@ function buildRoom() {
   mainLight.shadow.camera.bottom = -12;
   scene.add(mainLight);
 
-  const warmLight = new THREE.PointLight(0xffb75d, 3.2, 20);
+  const warmLight = new THREE.PointLight(0xffdc79, 2.2, 20);
   warmLight.position.set(0, 4.7, -2);
   warmLight.castShadow = true;
   scene.add(warmLight);
 
   floorTexture = makeFloorTexture();
-  const floorMat = new THREE.MeshStandardMaterial({ map: floorTexture, roughness: .86 });
+  const floorMat = new THREE.MeshToonMaterial({ map: floorTexture });
   const floor = mesh(new THREE.BoxGeometry(17, .26, 22), floorMat, new THREE.Vector3(0, -.13, 0), false);
   world.add(floor);
 
@@ -140,6 +149,7 @@ function buildRoom() {
   addEntrance();
   addFloorDetails();
   addPeople();
+  addTargetMarker();
 }
 
 function addWalls() {
@@ -324,10 +334,11 @@ function addNpc(name, color, position, rotation) {
   const person = new THREE.Group();
   person.position.copy(position);
   person.rotation.y = rotation;
-  const body = mesh(new THREE.CapsuleGeometry(.28, .68, 8, 20), material(color, .64), new THREE.Vector3(0, .72, 0));
-  const head = mesh(new THREE.SphereGeometry(.24, 24, 16), material(0xffd7aa, .55), new THREE.Vector3(0, 1.36, 0));
-  const hair = mesh(new THREE.SphereGeometry(.255, 20, 12, 0, Math.PI * 2, 0, Math.PI * .58), material(0x2f2925, .72), new THREE.Vector3(0, 1.48, 0));
-  person.add(body, head, hair);
+  const shadow = mesh(new THREE.CylinderGeometry(.42, .46, .025, 28), new THREE.MeshBasicMaterial({ color: 0x2c4a35, transparent: true, opacity: .25 }), new THREE.Vector3(0, .03, 0), false, false);
+  const body = mesh(new THREE.CapsuleGeometry(.3, .52, 8, 20), material(color, .64), new THREE.Vector3(0, .64, 0));
+  const head = mesh(new THREE.SphereGeometry(.33, 24, 16), material(0xffd7aa, .55), new THREE.Vector3(0, 1.18, 0));
+  const hair = mesh(new THREE.SphereGeometry(.34, 20, 12, 0, Math.PI * 2, 0, Math.PI * .58), material(0x2f2925, .72), new THREE.Vector3(0, 1.31, 0));
+  person.add(shadow, body, head, hair);
   world.add(person);
 
   const label = makeTextSprite(name, color);
@@ -349,15 +360,39 @@ function addGuideRing(position, color) {
   world.add(ring);
 }
 
+function addTargetMarker() {
+  targetMarker = new THREE.Group();
+  const ring = mesh(
+    new THREE.TorusGeometry(.42, .035, 8, 32),
+    new THREE.MeshBasicMaterial({ color: 0xffe35b }),
+    new THREE.Vector3(0, .08, 0),
+    false,
+    false
+  );
+  ring.rotation.x = Math.PI / 2;
+  const arrow = mesh(
+    new THREE.ConeGeometry(.18, .34, 4),
+    new THREE.MeshBasicMaterial({ color: 0xffe35b }),
+    new THREE.Vector3(0, .45, 0),
+    false,
+    false
+  );
+  arrow.rotation.y = Math.PI / 4;
+  targetMarker.add(ring, arrow);
+  targetMarker.visible = false;
+  scene.add(targetMarker);
+}
+
 function buildAvatar() {
   avatarBody = new THREE.Group();
-  const body = mesh(new THREE.CapsuleGeometry(.34, .82, 8, 24), material(0x1f8f8a, .58), new THREE.Vector3(0, .82, 0));
-  const head = mesh(new THREE.SphereGeometry(.29, 28, 18), material(0xffd7aa, .5), new THREE.Vector3(0, 1.55, 0));
-  const scarf = mesh(new THREE.TorusGeometry(.31, .045, 10, 28), material(0xf4c95d, .48), new THREE.Vector3(0, 1.18, 0));
+  const shadow = mesh(new THREE.CylinderGeometry(.5, .55, .025, 32), new THREE.MeshBasicMaterial({ color: 0x2c4a35, transparent: true, opacity: .28 }), new THREE.Vector3(0, .03, 0), false, false);
+  const body = mesh(new THREE.CapsuleGeometry(.34, .58, 8, 24), material(0x287bd6, .58), new THREE.Vector3(0, .68, 0));
+  const head = mesh(new THREE.SphereGeometry(.37, 28, 18), material(0xffd7aa, .5), new THREE.Vector3(0, 1.27, 0));
+  const scarf = mesh(new THREE.TorusGeometry(.34, .045, 10, 28), material(0xf4c95d, .48), new THREE.Vector3(0, 1.02, 0));
   scarf.rotation.x = Math.PI / 2;
   const marker = mesh(new THREE.TorusGeometry(.62, .035, 12, 56), new THREE.MeshBasicMaterial({ color: 0xf4c95d }), new THREE.Vector3(0, .08, 0), false, false);
   marker.rotation.x = Math.PI / 2;
-  avatarBody.add(body, head, scarf, marker);
+  avatarBody.add(shadow, body, head, scarf, marker);
   avatar.add(avatarBody);
 }
 
@@ -369,35 +404,34 @@ function bindControls() {
   window.addEventListener("keyup", (event) => keys.delete(event.key.toLowerCase()));
   window.addEventListener("resize", resize);
 
-  canvas.addEventListener("click", () => {
-    canvas.requestPointerLock?.();
-    playOverlay.classList.add("hidden");
-  });
   playOverlay.addEventListener("click", () => {
-    canvas.requestPointerLock?.();
     playOverlay.classList.add("hidden");
-  });
-  document.addEventListener("pointerlockchange", () => {
-    const locked = document.pointerLockElement === canvas;
-    playOverlay.classList.toggle("hidden", locked);
-  });
-  document.addEventListener("mousemove", (event) => {
-    if (document.pointerLockElement !== canvas) return;
-    rotateView(event.movementX, event.movementY);
+    setMoveTargetFromPointer(canvas.clientWidth / 2, canvas.clientHeight / 2);
   });
 
   canvas.addEventListener("pointerdown", (event) => {
+    playOverlay.classList.add("hidden");
     dragging = true;
+    dragButton = event.button;
     lastPointer = { x: event.clientX, y: event.clientY };
   });
   window.addEventListener("pointerup", () => {
+    if (dragging && dragButton === 0) {
+      setMoveTargetFromPointer(lastPointer.x, lastPointer.y);
+    }
     dragging = false;
+    dragButton = -1;
   });
   window.addEventListener("pointermove", (event) => {
-    if (!dragging || document.pointerLockElement === canvas) return;
-    rotateView(event.clientX - lastPointer.x, event.clientY - lastPointer.y);
+    if (!dragging) return;
+    const moved = Math.abs(event.clientX - lastPointer.x) + Math.abs(event.clientY - lastPointer.y);
+    if (dragButton === 2 || moved > 10) {
+      rotateView(event.clientX - lastPointer.x, event.clientY - lastPointer.y);
+      dragButton = 2;
+    }
     lastPointer = { x: event.clientX, y: event.clientY };
   });
+  canvas.addEventListener("contextmenu", (event) => event.preventDefault());
 
   document.querySelectorAll("[data-move]").forEach((button) => {
     const direction = button.dataset.move;
@@ -410,6 +444,8 @@ function bindControls() {
     button.addEventListener("click", () => {
       const target = places[button.dataset.jump].position;
       avatar.position.copy(toVector3(target));
+      moveTarget = null;
+      if (targetMarker) targetMarker.visible = false;
       updatePlace(true);
     });
   });
@@ -429,7 +465,22 @@ function bindControls() {
 
 function rotateView(deltaX, deltaY) {
   yaw -= deltaX * .0024;
-  pitch = THREE.MathUtils.clamp(pitch - deltaY * .0018, -.68, .38);
+  pitch = THREE.MathUtils.clamp(pitch - deltaY * .0018, -.62, -.22);
+}
+
+function setMoveTargetFromPointer(clientX, clientY) {
+  const rect = canvas.getBoundingClientRect();
+  pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+  pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+  raycaster.setFromCamera(pointer, camera);
+  const hit = new THREE.Vector3();
+  if (!raycaster.ray.intersectPlane(groundPlane, hit)) return;
+  hit.x = THREE.MathUtils.clamp(hit.x, -7.45, 7.45);
+  hit.z = THREE.MathUtils.clamp(hit.z, -9.05, 9.55);
+  hit.y = 0;
+  moveTarget = hit;
+  targetMarker.position.copy(hit);
+  targetMarker.visible = true;
 }
 
 function tick() {
@@ -449,15 +500,33 @@ function moveAvatar(delta) {
   if (keys.has("s") || keys.has("arrowdown") || moveButtons.has("back")) input.z -= 1;
   if (keys.has("a") || keys.has("arrowleft") || moveButtons.has("left")) input.x -= 1;
   if (keys.has("d") || keys.has("arrowright") || moveButtons.has("right")) input.x += 1;
-  if (input.lengthSq() === 0) return;
+  if (input.lengthSq() > 0) {
+    moveTarget = null;
+    if (targetMarker) targetMarker.visible = false;
+  }
 
-  input.normalize();
-  const forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
-  const right = new THREE.Vector3(forward.z, 0, -forward.x);
-  const direction = new THREE.Vector3()
-    .addScaledVector(forward, input.z)
-    .addScaledVector(right, input.x)
-    .normalize();
+  let direction = new THREE.Vector3();
+  if (input.lengthSq() > 0) {
+    input.normalize();
+    const forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
+    const right = new THREE.Vector3(forward.z, 0, -forward.x);
+    direction = new THREE.Vector3()
+      .addScaledVector(forward, input.z)
+      .addScaledVector(right, input.x)
+      .normalize();
+  } else if (moveTarget) {
+    direction.subVectors(moveTarget, avatar.position);
+    direction.y = 0;
+    const remaining = direction.length();
+    if (remaining < .12) {
+      moveTarget = null;
+      targetMarker.visible = false;
+      return;
+    }
+    direction.normalize();
+  } else {
+    return;
+  }
 
   const speed = keys.has("shift") ? 6.2 : 4.2;
   avatar.position.addScaledVector(direction, delta * speed);
@@ -475,12 +544,10 @@ function animatePeople(elapsed) {
 
 function updateCamera(immediate) {
   const forward = new THREE.Vector3(Math.sin(yaw), 0, Math.cos(yaw));
-  const shoulder = new THREE.Vector3(-Math.cos(yaw) * .45, 0, Math.sin(yaw) * .45);
-  const target = new THREE.Vector3(avatar.position.x, 1.35, avatar.position.z).addScaledVector(forward, 1.4);
-  const cameraTarget = new THREE.Vector3(avatar.position.x, 1.65, avatar.position.z)
-    .addScaledVector(forward, -4.4 * Math.cos(pitch))
-    .addScaledVector(shoulder, 1)
-    .add(new THREE.Vector3(0, 2.2 + pitch * 2.4, 0));
+  const target = new THREE.Vector3(avatar.position.x, .95, avatar.position.z).addScaledVector(forward, .8);
+  const cameraTarget = new THREE.Vector3(avatar.position.x, 0, avatar.position.z)
+    .addScaledVector(forward, -8.4)
+    .add(new THREE.Vector3(0, 7.6 + pitch * 3.2, 0));
 
   if (immediate) camera.position.copy(cameraTarget);
   else camera.position.lerp(cameraTarget, .16);
@@ -498,8 +565,8 @@ function updatePlace(force) {
     }
   });
 
-  const lockText = document.pointerLockElement === canvas ? "マウス操作中" : "クリックでマウス操作";
-  positionText.textContent = `${lockText} / X ${avatar.position.x.toFixed(1)} Z ${avatar.position.z.toFixed(1)}`;
+  const moveText = moveTarget ? "移動中" : "床をクリックして移動";
+  positionText.textContent = `${moveText} / X ${avatar.position.x.toFixed(1)} Z ${avatar.position.z.toFixed(1)}`;
   if (!force && (next === nearestPlace || distance > 3.4)) return;
 
   nearestPlace = next;
@@ -514,20 +581,26 @@ function makeFloorTexture() {
   textureCanvas.width = 512;
   textureCanvas.height = 512;
   const ctx = textureCanvas.getContext("2d");
-  ctx.fillStyle = "#b98555";
+  ctx.fillStyle = "#61b85f";
   ctx.fillRect(0, 0, 512, 512);
   for (let y = 0; y < 512; y += 64) {
-    for (let x = 0; x < 512; x += 128) {
-      ctx.fillStyle = (x / 128 + y / 64) % 2 === 0 ? "#c89964" : "#aa7248";
-      ctx.fillRect(x, y, 128, 64);
-      ctx.strokeStyle = "rgba(72, 45, 27, .22)";
-      ctx.strokeRect(x, y, 128, 64);
+    for (let x = 0; x < 512; x += 64) {
+      const parity = (x / 64 + y / 64) % 2;
+      ctx.fillStyle = parity === 0 ? "#7ed66f" : "#67bf5f";
+      if (x > 192 && x < 320) ctx.fillStyle = parity === 0 ? "#d8c391" : "#c8ac78";
+      ctx.fillRect(x, y, 64, 64);
+      ctx.strokeStyle = "rgba(21, 86, 45, .2)";
+      ctx.strokeRect(x, y, 64, 64);
+      if (parity === 0 && x <= 192) {
+        ctx.fillStyle = "rgba(255,255,255,.18)";
+        ctx.fillRect(x + 12, y + 14, 12, 5);
+      }
     }
   }
   const texture = new THREE.CanvasTexture(textureCanvas);
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(5, 7);
+  texture.repeat.set(4, 6);
   return texture;
 }
 

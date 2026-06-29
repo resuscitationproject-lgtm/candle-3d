@@ -1,13 +1,13 @@
 :root {
-  --ink: #263130;
-  --muted: #697371;
-  --paper: #fffaf1;
-  --panel: #fffdf8;
-  --line: #dfd2bf;
-  --green: #4f8b6b;
-  --red: #d85b4a;
-  --blue: #4c78a8;
-  --gold: #f4c95d;
+  --ink: #17213a;
+  --muted: #4d5f81;
+  --paper: #fffbe9;
+  --panel: #f6efd0;
+  --line: #1f376f;
+  --green: #38a64a;
+  --red: #d54d42;
+  --blue: #244da8;
+  --gold: #f4c242;
 }
 
 * {
@@ -19,7 +19,7 @@ body {
   min-height: 100vh;
   color: var(--ink);
   font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", Meiryo, system-ui, sans-serif;
-  background: #1d2423;
+  background: #203f72;
   user-select: none;
 }
 
@@ -47,7 +47,7 @@ button {
   overflow: hidden;
   height: 100vh;
   min-height: 100vh;
-  background: #17201f;
+  background: #6eb7df;
 }
 
 #worldCanvas {
@@ -65,9 +65,9 @@ button {
   display: grid;
   place-items: center;
   padding: 24px;
-  color: #fffaf1;
+  color: #fff;
   text-align: center;
-  background: #17201f;
+  background: #203f72;
 }
 
 .loading.hidden {
@@ -84,12 +84,11 @@ button {
   min-width: min(340px, calc(100% - 40px));
   padding: 20px 22px;
   transform: translate(-50%, -50%);
-  color: #fffaf1;
-  border: 1px solid rgba(255, 250, 241, .34);
+  color: #fff;
+  border: 3px solid #fff;
   border-radius: 8px;
-  background: rgba(24, 31, 30, .78);
-  box-shadow: 0 18px 48px rgba(0, 0, 0, .35);
-  backdrop-filter: blur(10px);
+  background: #1f376f;
+  box-shadow: 0 8px 0 #0f1f49, 0 18px 42px rgba(0, 0, 0, .34);
 }
 
 .play-overlay.hidden {
@@ -101,41 +100,8 @@ button {
 }
 
 .play-overlay small {
-  color: rgba(255, 250, 241, .72);
+  color: rgba(255, 255, 255, .78);
   font-weight: 700;
-}
-
-.crosshair {
-  position: absolute;
-  z-index: 2;
-  left: 50%;
-  top: 50%;
-  width: 18px;
-  height: 18px;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-}
-
-.crosshair::before,
-.crosshair::after {
-  content: "";
-  position: absolute;
-  background: rgba(255, 250, 241, .72);
-  box-shadow: 0 1px 6px rgba(0, 0, 0, .5);
-}
-
-.crosshair::before {
-  left: 8px;
-  top: 0;
-  width: 2px;
-  height: 18px;
-}
-
-.crosshair::after {
-  left: 0;
-  top: 8px;
-  width: 18px;
-  height: 2px;
 }
 
 .hud {
@@ -154,14 +120,14 @@ button {
 .hud p,
 .intro p {
   margin: 0 0 6px;
-  color: rgba(255, 250, 241, .78);
+  color: rgba(255, 255, 255, .86);
   font-size: 12px;
   font-weight: 800;
 }
 
 .hud h1 {
   margin: 0;
-  color: #fffaf1;
+  color: #fff;
   font-size: clamp(24px, 3vw, 44px);
   line-height: 1;
   letter-spacing: 0;
@@ -172,7 +138,7 @@ button {
   display: grid;
   gap: 5px;
   justify-items: end;
-  color: #fffaf1;
+  color: #fff;
   font-size: 13px;
   font-weight: 700;
   text-shadow: 0 3px 14px rgba(0, 0, 0, .45);
@@ -180,9 +146,9 @@ button {
 
 #placeName {
   padding: 7px 10px;
-  border: 1px solid rgba(255, 250, 241, .38);
+  border: 2px solid #fff;
   border-radius: 8px;
-  background: rgba(38, 49, 48, .56);
+  background: #1f376f;
 }
 
 .mobile-pad {
@@ -201,8 +167,8 @@ button {
 .mobile-pad button {
   min-width: 48px;
   color: #fff;
-  background: rgba(38, 49, 48, .72);
-  border-color: rgba(255, 250, 241, .32);
+  background: #1f376f;
+  border: 2px solid #fff;
   touch-action: none;
 }
 
@@ -214,12 +180,12 @@ button {
 .panel {
   min-height: 100vh;
   padding: 24px;
-  border-left: 1px solid var(--line);
+  border-left: 4px solid var(--line);
   background: var(--panel);
 }
 
 .intro p {
-  color: var(--muted);
+  color: var(--blue);
 }
 
 .intro h2 {
@@ -234,9 +200,10 @@ button {
 .care-card,
 .chat {
   padding: 15px;
-  border: 1px solid var(--line);
+  border: 3px solid var(--line);
   border-radius: 8px;
   background: var(--paper);
+  box-shadow: 0 5px 0 rgba(31, 55, 111, .18);
 }
 
 .join-card label {
@@ -264,7 +231,8 @@ input {
 #joinButton,
 #staffButton {
   color: #fff;
-  background: var(--green);
+  background: var(--blue);
+  border-color: #132a66;
 }
 
 .controls {
@@ -275,9 +243,9 @@ input {
 }
 
 .controls button {
-  color: var(--ink);
-  background: #efe7d8;
-  border-color: var(--line);
+  color: #fff;
+  background: var(--blue);
+  border-color: #132a66;
 }
 
 .place-card h3,
@@ -301,7 +269,7 @@ input {
 .quick-actions button {
   min-height: 48px;
   background: #fff;
-  border-color: var(--line);
+  border-color: var(--blue);
 }
 
 .care-card {
@@ -329,7 +297,7 @@ input {
   margin: 0;
   padding: 9px 10px;
   border-radius: 8px;
-  background: #f2eadc;
+  background: #e8f0ff;
   line-height: 1.5;
 }
 
