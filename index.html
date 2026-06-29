@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Learning Space Candle | 3D縁日食堂</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="shell" aria-label="3D縁日食堂">
+    <section class="world" aria-label="3D会場">
+      <canvas id="worldCanvas"></canvas>
+      <div class="loading" id="loading">3D会場を準備しています</div>
+      <div class="hud">
+        <div>
+          <p>LEARNING SPACE CANDLE</p>
+          <h1>縁日食堂 3D会場</h1>
+        </div>
+        <div class="meters" aria-label="現在地">
+          <span id="placeName">入口</span>
+          <span id="positionText">WASD / 矢印キーで移動</span>
+        </div>
+      </div>
+      <div class="mobile-pad" aria-label="移動ボタン">
+        <button type="button" data-move="forward">↑</button>
+        <button type="button" data-move="left">←</button>
+        <button type="button" data-move="back">↓</button>
+        <button type="button" data-move="right">→</button>
+      </div>
+    </section>
+
+    <aside class="panel" aria-label="参加パネル">
+      <div class="intro">
+        <p>オンライン参加者</p>
+        <h2>アバターを動かして、話したい場所へ。</h2>
+      </div>
+
+      <div class="join-card">
+        <label for="nickname">表示名</label>
+        <div class="join-row">
+          <input id="nickname" type="text" value="オンライン参加者" maxlength="16">
+          <button id="joinButton" type="button">入室</button>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button type="button" data-jump="entrance">入口</button>
+        <button type="button" data-jump="students">学生</button>
+        <button type="button" data-jump="adults">社会人</button>
+        <button type="button" data-jump="kitchen">食堂</button>
+      </div>
+
+      <section class="place-card">
+        <h3 id="zoneTitle">入口</h3>
+        <p id="zoneText">まずは会場を見回してみましょう。聞くだけ参加でも大丈夫です。</p>
+        <div class="quick-actions">
+          <button type="button" data-message="こんばんは。オンラインから参加しています。">こんばんは</button>
+          <button type="button" data-message="今日は聞くだけで参加します。">聞くだけ</button>
+          <button type="button" data-message="近くのテーブルに入ってみます。">移動します</button>
+        </div>
+      </section>
+
+      <section class="care-card">
+        <h3>安心設定</h3>
+        <label><input type="checkbox" checked> 顔出しなし</label>
+        <label><input type="checkbox" checked> 聞くだけ表示</label>
+        <button id="staffButton" type="button">スタッフを呼ぶ</button>
+      </section>
+
+      <section class="chat" id="chatLog" aria-live="polite">
+        <p><strong>受付</strong> ようこそ。アバターを動かして会場に入ってください。</p>
+      </section>
+    </aside>
+  </main>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
